@@ -17,15 +17,18 @@ RUN cd /var/prod && bun install --frozen-lockfile --production
 # then copy all (non-ignored) project files into the image
 FROM base AS dev
 COPY --from=devDependencies /var/dev/node_modules node_modules
+COPY --from=devDependencies /var/dev/bun.lockb bun.lockb
+COPY --from=devDependencies /var/dev/package.json package.json
 COPY . .
-
 
 # copy production dependencies and source code into final image
 FROM base AS prod
 COPY --from=prodDependencies /var/prod/node_modules node_modules
+COPY --from=prodDependencies /var/prod/bun.lockb bun.lockb
+COPY --from=prodDependencies /var/prod/package.json package.json
 COPY . .
 
 # run the app
 USER bun
 EXPOSE 3000/tcp
-ENTRYPOINT [ "bun", "run", "index.ts" ]
+CMD bun run dev
