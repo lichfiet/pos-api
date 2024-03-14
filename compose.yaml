@@ -7,6 +7,6 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./:/usr/src/api
-    environment:
-      - BUN_ENV=development
+      - type: bind
+        source: ./
+        target: /usr/src/app
