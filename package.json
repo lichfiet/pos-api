@@ -1,11 +1,15 @@
 {
   "name": "pos-project",
   "module": "index.ts",
-  "type": "module",
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "^1.0.8",
+    "@types/figlet": "^1.5.8"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "type": "module",
+  "dependencies": {
+    "figlet": "^1.7.0"
   }
 }
