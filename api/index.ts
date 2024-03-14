@@ -1,7 +1,9 @@
 import figlet from 'figlet'
 
+//boiler plate
 const server = Bun.serve({
 	port: 8000,
+	//more boiler plate --> this function runs every time this server is hit
 	fetch(req) {
 		const route = new URL(req.url).pathname
 		if (route === '/secret') {
