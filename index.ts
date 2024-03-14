@@ -1,27 +1,59 @@
 import figlet from 'figlet'
 
-//boiler plate
+const postRoutes: any = {
+	'/api/login': async (req: Request) => {
+		try {
+			const body = (await req.json()) as {
+				username: string
+				password: string
+			}
+			if (!body.username) {
+				return new Response('Please input a valid username.', { status: 400 })
+			} else if (!body.password) {
+				return new Response('Please input a valid password.', { status: 400 })
+			}
+			return new Response(`hit login endpoint with ${JSON.stringify(body)}`)
+
+		} catch {
+			return new Response('Invalid JSON', { status: 400 })
+		}
+	},
+}
+
+const getRoutes: any = {
+	'/secret': async (req: Request) => {
+		return new Response(figlet.textSync('Spencer likes boys', { font: 'Ghost' }))
+	},
+}
+
 const server = Bun.serve({
 	port: 8000,
 	//more boiler plate --> this function runs every time this server is hit
-	fetch(req) {
-		// this is everything that follows the last / in a url.
-		// for example, https://wickedcrazy.com/i/love/hot/girls
-		// our "route" variable would be /i/love/hot/girls
+
+	async fetch(req: Request) {
 		const route = new URL(req.url).pathname
-		// if the request is a POST and the route is /api/login
-		// we return a response with a status of 200 and the body
-		// "hit login endpoint"
-		if (req.method === 'POST' && route === '/api/login') {
-			return new Response('hit login endpoint', { status: 200 })
-		} else if (req.method === 'GET' && route === '/secret') {
-			// figlet is text -> art
-			return new Response(
-				figlet.textSync('Spencer likes boys :)', { font: 'Ghost' })
-			)
-		} else {
-			const body = figlet.textSync(`${route}`)
-			return new Response(body)
+
+		switch (req.method) {
+			case 'POST':
+				if (postRoutes[route]) {
+					return postRoutes[route](req)
+				} else {
+					return new Response(figlet.textSync('Route not found'), {
+						status: 404,
+					})
+				}
+
+			case 'GET':
+				if (getRoutes[route]) {
+					return getRoutes[route](req)
+				} else {
+					return new Response(figlet.textSync('Route not found'), {
+						status: 404,
+					})
+				}
+
+			default:
+				return new Response('HTTP request method not allowed', { status: 405 })
 		}
 	},
 })
