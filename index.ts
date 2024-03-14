@@ -1,4 +1,6 @@
 import figlet from 'figlet'
+import verifyJWT from './auth/verifyJWT';
+import hasRole from './auth/hasRole';
 
 const postRoutes: any = {
 	'/api/login': async (req: Request) => {
