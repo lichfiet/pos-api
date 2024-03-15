@@ -65,6 +65,7 @@ services:
       FUSIONAUTH_APP_URL: http://fusionauth:9011
       SEARCH_SERVERS: http://search:9200
       SEARCH_TYPE: elasticsearch
+      FUSIONAUTH_APP_KICKSTART_FILE: ${FUSIONAUTH_APP_KICKSTART_FILE}
     networks:
       - db_net
       - search_net
@@ -73,17 +74,7 @@ services:
       - 9011:9011
     volumes:
       - fusionauth_config:/usr/local/fusionauth/config
-
-  pos-api:
-    container_name: pos-api
-    image: api:dev
-    restart: always
-    ports:
-      - "8000:8000"
-    volumes:
-      - type: bind
-        source: ./
-        target: /usr/src/app
+      - ./kickstart:/usr/local/fusionauth/kickstart
 
 networks:
   db_net:

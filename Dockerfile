@@ -6,11 +6,11 @@ WORKDIR /usr/src/app
 FROM base AS install
 RUN mkdir -p /var/dev
 COPY package.json bun.lockb /var/dev/
-RUN cd /var/dev && bun install --frozen-lockfile --development
+RUN cd /var/dev && bun install --development
 
 RUN mkdir -p /var/prod
 COPY package.json bun.lockb /var/prod/
-RUN cd /var/prod && bun install --frozen-lockfile --production
+RUN cd /var/prod && bun install --production
 
 # then copy all (non-ignored) project files into the image
 FROM base AS dev

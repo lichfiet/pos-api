@@ -1,23 +1,63 @@
 import figlet from 'figlet'
-import verifyJWT from './auth/verifyJWT';
-import hasRole from './auth/hasRole';
+import verifyJWT from './utils/auth';
 
 const postRoutes: any = {
-	'/api/login': async (req: Request) => {
-		try {
-			const body = (await req.json()) as {
-				username: string
-				password: string
-			}
-			if (!body.username) {
-				return new Response('Please input a valid username.', { status: 400 })
-			} else if (!body.password) {
-				return new Response('Please input a valid password.', { status: 400 })
-			}
-			return new Response(`hit login endpoint with ${JSON.stringify(body)}`)
+	'/login': async (req: Request) => {
 
-		} catch {
-			return new Response('Invalid JSON', { status: 400 })
+		const reqBody: any = await req.json();
+
+		const loginId: string = reqBody.loginId;
+		const password: string = reqBody.password;
+
+		try {
+			console.log('Requesting token from Auth Server');
+			const response = await fetch('http://localhost:9011/api/login', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					applicationId: `${process.env.APPLICATION_ID}`,
+					loginId: `${loginId}`,
+					password: `${password}`,
+				}),
+			});
+
+			const body: any = await response.json();
+			return new Response(`{\n "token": "${body.token}"}`, {
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
+		} catch (error) {
+			console.error('Error requesting token from Auth Server:', error);
+			return new Response('Internal Server Error', { status: 500 });
+		}
+	},
+	'/logout': async (req: Request) => {
+
+		const reqHeaders: any = await req.headers;
+
+		const access_token = reqHeaders.get('access_token');
+
+		try {
+			console.log('Requesting token from Auth Server');
+			const response = await fetch('http://localhost:9011/api/logout', {
+				method: 'POST',
+				headers: {
+					'Cookie': `access_token=${access_token}`,
+				},
+			});
+
+			const body: any = await response.status;
+			return new Response(`${body}`, {
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
+		} catch (error) {
+			console.error('Error requesting token from Auth Server:', error);
+			return new Response('Internal Server Error', { status: 500 });
 		}
 	},
 }
@@ -25,6 +65,9 @@ const postRoutes: any = {
 const getRoutes: any = {
 	'/secret': async (req: Request) => {
 		return new Response(figlet.textSync('Spencer likes boys', { font: 'Ghost' }))
+	},
+	'/auth': async (req: Request) => {
+		return new Response(`${await verifyJWT(req)}`)
 	},
 }
 
