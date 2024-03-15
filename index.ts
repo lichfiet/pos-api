@@ -1,60 +1,19 @@
 import figlet from 'figlet'
-import verifyJWT from './utils/auth';
+import auth from './utils/auth';
 
 const postRoutes: any = {
 	'/login': async (req: Request) => {
-
-		const reqBody: any = await req.json();
-
-		const loginId: string = reqBody.loginId;
-		const password: string = reqBody.password;
-
 		try {
-			console.log('Requesting token from Auth Server');
-			const response = await fetch('http://localhost:9011/api/login', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					applicationId: `${process.env.APPLICATION_ID}`,
-					loginId: `${loginId}`,
-					password: `${password}`,
-				}),
-			});
-
-			const body: any = await response.json();
-			return new Response(`{\n "token": "${body.token}"}`, {
-				headers: {
-					'Content-Type': 'application/json',
-				},
-			});
+			return new Response(JSON.stringify(await auth.token.create(req)), { headers: { 'Content-Type': 'application/json' } });
 		} catch (error) {
 			console.error('Error requesting token from Auth Server:', error);
 			return new Response('Internal Server Error', { status: 500 });
 		}
 	},
 	'/logout': async (req: Request) => {
-
-		const reqHeaders: any = await req.headers;
-
-		const access_token = reqHeaders.get('access_token');
-
+		// TODO: Implement logout
 		try {
-			console.log('Requesting token from Auth Server');
-			const response = await fetch('http://localhost:9011/api/logout', {
-				method: 'POST',
-				headers: {
-					'Cookie': `access_token=${access_token}`,
-				},
-			});
-
-			const body: any = await response.status;
-			return new Response(`${body}`, {
-				headers: {
-					'Content-Type': 'application/json',
-				},
-			});
+			return new Response(JSON.stringify(await auth.token.invalidate(req)), { headers: { 'Content-Type': 'application/json' } });
 		} catch (error) {
 			console.error('Error requesting token from Auth Server:', error);
 			return new Response('Internal Server Error', { status: 500 });
@@ -64,10 +23,11 @@ const postRoutes: any = {
 
 const getRoutes: any = {
 	'/secret': async (req: Request) => {
-		return new Response(figlet.textSync('Spencer likes boys', { font: 'Ghost' }))
+
+		return new Response(figlet.textSync('Spencer likes boys \nand that is \nsus amongus', { font: 'Ghost' }), {status: 201})
 	},
 	'/auth': async (req: Request) => {
-		return new Response(`${await verifyJWT(req)}`)
+		return new Response(`${JSON.stringify(await auth.token.verify(req))}`)
 	},
 }
 
@@ -81,7 +41,18 @@ const server = Bun.serve({
 		switch (req.method) {
 			case 'POST':
 				if (postRoutes[route]) {
-					return postRoutes[route](req)
+					if (route === '/login' || route === '/register') {
+						return postRoutes[route](req)
+					} else {
+						const token: any = await auth.token.verify(req);
+						const tokenStatus = (await token)
+						console.log(tokenStatus);
+						if (await token.status !== 200) {
+							return new Response(token.message, { status: token.status });
+						} else {
+							return postRoutes[route](req)
+						}
+					}
 				} else {
 					return new Response(figlet.textSync('Route not found'), {
 						status: 404,
@@ -90,7 +61,18 @@ const server = Bun.serve({
 
 			case 'GET':
 				if (getRoutes[route]) {
-					return getRoutes[route](req)
+					if (route === '/health' || route === '/testing') {
+						return getRoutes[route](req)
+					} else {
+						const token: any = await auth.token.verify(req);
+						const tokenStatus = (await token)
+						console.log(tokenStatus);
+						if (await token.status !== 200) {
+							return new Response(JSON.stringify(token), { status: token.status, headers: { 'Content-Type': 'application/json' } });
+						} else {
+							return getRoutes[route](req)
+						}
+					}
 				} else {
 					return new Response(figlet.textSync('Route not found'), {
 						status: 404,
