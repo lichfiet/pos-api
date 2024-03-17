@@ -16,6 +16,8 @@
   "dependencies": {
     "dotenv": "^16.4.5",
     "figlet": "^1.7.0",
-    "jose": "^5.2.3"
+    "jose": "^5.2.3",
+    "pino": "^8.19.0",
+    "pino-pretty": "^10.3.1"
   }
 }

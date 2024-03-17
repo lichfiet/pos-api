@@ -1,21 +1,30 @@
 import figlet from 'figlet'
 import auth from './utils/auth';
+import logger from './utils/logger';
 
 const postRoutes: any = {
-	'/login': async (req: Request) => {
+	'/user/login': async (req: Request) => {
 		try {
 			return new Response(JSON.stringify(await auth.token.create(req)), { headers: { 'Content-Type': 'application/json' } });
 		} catch (error) {
-			console.error('Error requesting token from Auth Server:', error);
+			console.error('Error logging in user:', error);
 			return new Response('Internal Server Error', { status: 500 });
 		}
 	},
-	'/logout': async (req: Request) => {
+	'/user/logout': async (req: Request) => {
 		// TODO: Implement logout
 		try {
 			return new Response(JSON.stringify(await auth.token.invalidate(req)), { headers: { 'Content-Type': 'application/json' } });
 		} catch (error) {
-			console.error('Error requesting token from Auth Server:', error);
+			console.error('Error logging out user:', error);
+			return new Response('Internal Server Error', { status: 500 });
+		}
+	},
+	'/user/register': async (req: Request) => {
+		try {
+			return new Response(JSON.stringify(await auth.user.register(req)), { headers: { 'Content-Type': 'application/json' } });
+		} catch (error) {
+			console.error('Error registering user:', error);
 			return new Response('Internal Server Error', { status: 500 });
 		}
 	},
@@ -23,67 +32,78 @@ const postRoutes: any = {
 
 const getRoutes: any = {
 	'/secret': async (req: Request) => {
-
-		return new Response(figlet.textSync('Spencer likes boys \nand that is \nsus amongus', { font: 'Ghost' }), {status: 201})
+		return new Response(figlet.textSync('Spencer likes boys \nand that is \nsus amongus', { font: 'Ghost' }), { status: 201 })
 	},
-	'/auth': async (req: Request) => {
+	'/user/auth': async (req: Request) => {
 		return new Response(`${JSON.stringify(await auth.token.verify(req))}`)
 	},
+	'/health': async (req: Request) => {
+		return new Response(JSON.stringify({message: `She's a runnin'!`, status: 200 , value: ''}), { headers: { 'Content-Type': 'application/json' } })
+	}
+}
+
+const deleteRoutes: any = {
+	'/user/delete': async (req: Request) => {
+		try {
+			return new Response(JSON.stringify(await auth.user.remove(req)), { headers: { 'Content-Type': 'application/json' } });
+		} catch (error) {
+			console.error('Error deleting user:', error);
+			return new Response('Internal Server Error', { status: 500 });
+		}
+	},
+}
+
+const putRoutes: any = {
+	'/user/update': async (req: Request) => { },
+	'/user/inactivate': async (req: Request) => { },
+	'/user/activate': async (req: Request) => { },
 }
 
 const server = Bun.serve({
 	port: 8000,
-	//more boiler plate --> this function runs every time this server is hit
 
+	//more boiler plate --> this function runs every time this server is hit
 	async fetch(req: Request) {
 		const route = new URL(req.url).pathname
 
-		switch (req.method) {
-			case 'POST':
-				if (postRoutes[route]) {
-					if (route === '/login' || route === '/register') {
+		const authResponse: any = await auth.token.verify(req);
+		const priviledgedRoutes: string[] = ['/user/logout', '/user/auth', '/user/delete', '/user/update', '/secret'];
+
+		// if the route is priviledged and the token is not valid, return auth response
+		if (priviledgedRoutes.includes(route) && authResponse.status !== 200) {
+			return new Response(JSON.stringify(authResponse), { headers: { 'Content-Type': 'application/json' } });
+
+		// if the route is not priviledged or the token is valid, return the route
+		} else if (!priviledgedRoutes.includes(route) || authResponse.status === 200) {
+			logger.info("meow")
+			switch (req.method) {
+				case 'POST':
+					if (postRoutes[route]) {
 						return postRoutes[route](req)
 					} else {
-						const token: any = await auth.token.verify(req);
-						const tokenStatus = (await token)
-						console.log(tokenStatus);
-						if (await token.status !== 200) {
-							return new Response(token.message, { status: token.status });
-						} else {
-							return postRoutes[route](req)
-						}
+						return new Response(figlet.textSync('Route not found'), { status: 404 })
 					}
-				} else {
-					return new Response(figlet.textSync('Route not found'), {
-						status: 404,
-					})
-				}
 
-			case 'GET':
-				if (getRoutes[route]) {
-					if (route === '/health' || route === '/testing') {
+				case 'GET':
+					if (getRoutes[route]) {
 						return getRoutes[route](req)
 					} else {
-						const token: any = await auth.token.verify(req);
-						const tokenStatus = (await token)
-						console.log(tokenStatus);
-						if (await token.status !== 200) {
-							return new Response(JSON.stringify(token), { status: token.status, headers: { 'Content-Type': 'application/json' } });
-						} else {
-							return getRoutes[route](req)
-						}
+						return new Response(figlet.textSync('Route not found'), { status: 404 })
 					}
-				} else {
-					return new Response(figlet.textSync('Route not found'), {
-						status: 404,
-					})
-				}
 
-			default:
-				return new Response('HTTP request method not allowed', { status: 405 })
+				case 'DELETE':
+					if (deleteRoutes[route]) {
+						return postRoutes[route](req);
+					} else {
+						return new Response(figlet.textSync('Route not found'), { status: 404 })
+					}
+				default:
+					return new Response('HTTP request method not allowed', { status: 405 })
+			}
+
 		}
 	},
 })
 
 // if you run this in wsl it should open the port and map it to your windows machine
-console.log(`Listening on http://localhost:${server.port} ...`)
+logger.info(`Listening on http://localhost:${server.port} ...`)

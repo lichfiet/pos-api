@@ -21,6 +21,8 @@
 const jose = require('jose');
 require('dotenv').config({ path: '../.env' });
 
+import logger from './logger';
+
 // uses jose to decode jwt tokens, this looks for valid public tokens at an endpoint to check against supplied tokens
 const jwksClient = jose.createRemoteJWKSet(
     new URL(`${process.env.BASE_URL}/.well-known/jwks.json`)
@@ -43,7 +45,7 @@ const auth = {
     token: {
         // This function is called when a route is hit, and the token is passed in the header
         verify: async (req: Request) => {
-            console.log('Authorizing...');
+            logger.info('Authorizing...');
 
             /** extracts the token from the header, "Bearer <token>" gets turned into raw "<token>" */
             const authHeader = req.headers.get('authorization')
@@ -82,7 +84,7 @@ const auth = {
             const password: string = reqBody.password;
     
             try {
-                console.log('Requesting token from Auth Server');
+                logger.info('Requesting token from Auth Server');
                 const response = await fetch('http://localhost:9011/api/login', {
                     method: 'POST',
                     headers: {
@@ -105,9 +107,73 @@ const auth = {
         },
     },
     user: {
-        register: async (req: Request) => {},
+        register: async (req: Request) => {
+            const reqBody: any = await req.json();
+    
+            const email: string = reqBody.email;
+            const name: string = reqBody.name;
+            const password: string = reqBody.password;
+    
+            try {
+                logger.info('Requesting user registration from Auth Server');
+                const response = await fetch('http://localhost:9011/api/user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `${process.env.FUSION_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        applicationId: `${process.env.APPLICATION_ID}`,
+                        user: {
+                            email: `${email}`,
+                            firstName: `${name}`,
+                            password: `${password}`
+                        },
+                        email: `${email}`
+                    }),
+                });
+
+                const body: any = await response.json();
+
+                if (response.status === 200) {
+                    return new AuthResponse('User Registered', 201, body);
+                } else {
+                    return new AuthResponse('User Registration Failed', response.status, body);
+                }
+    
+            } catch (error) {
+                console.error('Error requesting token from Auth Server:', error);
+                return new AuthResponse('Internal Server Error', 500, '');
+            }
+        },
         modify: async (req: Request) => {},
-        remove: async (req: Request) => {},
+        remove: async (req: Request) => {
+            const reqBody: any = await req.json();
+            const userId: string = reqBody.userId;
+
+            try {
+                logger.info('Requesting user registration from Auth Server');
+                const response = await fetch(`http://localhost:9011/api/user/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `${process.env.FUSION_API_KEY}`
+                    },
+                });
+
+                const body: any = await response.json();
+
+                if (response.status === 200) {
+                    return new AuthResponse('User Deleted', 200, body);
+                } else {
+                    return new AuthResponse('Unable to Delete User', response.status, body);
+                }
+    
+            } catch (error) {
+                console.error('Error requesting deletion from Auth Server:', error);
+                return new AuthResponse('Internal Server Error', 500, '');
+            }
+        },
         deactivate: async (req: Request) => {},
         activate: async (req: Request) => {},
         api: {
