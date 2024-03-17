@@ -38,7 +38,7 @@ const getRoutes: any = {
 		return new Response(`${JSON.stringify(await auth.token.verify(req))}`)
 	},
 	'/health': async (req: Request) => {
-		return new Response(JSON.stringify({message: `She's a runnin'!`, status: 200 , value: ''}), { headers: { 'Content-Type': 'application/json' } })
+		return new Response(JSON.stringify({ message: `She's a runnin'!`, status: 200, value: '' }), { headers: { 'Content-Type': 'application/json' } })
 	}
 }
 
@@ -64,42 +64,48 @@ const server = Bun.serve({
 
 	//more boiler plate --> this function runs every time this server is hit
 	async fetch(req: Request) {
-		const route = new URL(req.url).pathname
 
-		const authResponse: any = await auth.token.verify(req);
+		const route = new URL(req.url).pathname
 		const priviledgedRoutes: string[] = ['/user/logout', '/user/auth', '/user/delete', '/user/update', '/secret'];
 
-		// if the route is priviledged and the token is not valid, return auth response
-		if (priviledgedRoutes.includes(route) && authResponse.status !== 200) {
-			return new Response(JSON.stringify(authResponse), { headers: { 'Content-Type': 'application/json' } });
-
-		// if the route is not priviledged or the token is valid, return the route
-		} else if (!priviledgedRoutes.includes(route) || authResponse.status === 200) {
-			logger.info("meow")
-			switch (req.method) {
-				case 'POST':
-					if (postRoutes[route]) {
-						return postRoutes[route](req)
-					} else {
-						return new Response(figlet.textSync('Route not found'), { status: 404 })
-					}
-
-				case 'GET':
-					if (getRoutes[route]) {
-						return getRoutes[route](req)
-					} else {
-						return new Response(figlet.textSync('Route not found'), { status: 404 })
-					}
-
-				case 'DELETE':
-					if (deleteRoutes[route]) {
-						return postRoutes[route](req);
-					} else {
-						return new Response(figlet.textSync('Route not found'), { status: 404 })
-					}
-				default:
-					return new Response('HTTP request method not allowed', { status: 405 })
+		// if the route is priviledged, check the token validity
+		if (priviledgedRoutes.includes(route)) {
+			const authResponse: any = await auth.token.verify(req);
+			
+			if (authResponse.status !== 200) 
+			{
+				return new Response(JSON.stringify(authResponse), { headers: { 'Content-Type': 'application/json' } });
+			} 
+			else 
+			{
+				logger.info(`User ${authResponse.value.email} is accessing route ${route}`);
 			}
+		};
+
+		switch (req.method) {
+			case 'POST':
+				if (postRoutes[route]) {
+					return postRoutes[route](req)
+				} else {
+					return new Response(figlet.textSync('Route not found'), { status: 404 })
+				}
+
+			case 'GET':
+				if (getRoutes[route]) {
+					return getRoutes[route](req)
+				} else {
+					return new Response(figlet.textSync('Route not found'), { status: 404 })
+				}
+
+			case 'DELETE':
+				if (deleteRoutes[route]) {
+					return postRoutes[route](req);
+				} else {
+					return new Response(figlet.textSync('Route not found'), { status: 404 })
+				}
+			default:
+				return new Response('HTTP request method not allowed', { status: 405 })
+
 
 		}
 	},
