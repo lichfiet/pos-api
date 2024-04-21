@@ -32,7 +32,7 @@ const postRoutes: any = {
 
 const getRoutes: any = {
 	'/secret': async (req: Request) => {
-		return new Response(figlet.textSync('Spencer likes boys \nand that is \nsus amongus', { font: 'Ghost' }), { status: 201 })
+		return new Response(figlet.textSync('Spencer likes boys \nand that is okay', { font: 'Ghost' }), { status: 201 })
 	},
 	'/user/auth': async (req: Request) => {
 		return new Response(`${JSON.stringify(await auth.token.verify(req))}`)
@@ -47,8 +47,7 @@ const deleteRoutes: any = {
 		try {
 			return new Response(JSON.stringify(await auth.user.remove(req)), { headers: { 'Content-Type': 'application/json' } });
 		} catch (error) {
-			console.error('Error deleting user:', error);
-			return new Response('Internal Server Error', { status: 500 });
+			console.error('Error deleting user:', error); return new Response('Internal Server Error', { status: 500 });
 		}
 	},
 }

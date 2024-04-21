@@ -1,4 +1,16 @@
+import path from 'path';
 import pino from 'pino';
+
+interface TargetOptions {
+  destination?: string;
+  colorize?: boolean;
+}
+
+interface Target {
+  level: string;
+  target: string;
+  options?: TargetOptions;
+}
 
 const transport = pino.transport({
   targets: [
@@ -6,7 +18,7 @@ const transport = pino.transport({
       level: 'info',
       target: 'pino-pretty',
       options: {
-        destination: `./log/${new Date().toLocaleDateString("de-DE")}.log`,
+        destination: path.resolve(__dirname, `./log/${new Date().toLocaleDateString("de-DE")}.log`),
         colorize: false
       },
     },
@@ -15,9 +27,9 @@ const transport = pino.transport({
       target: 'pino-pretty',
       options: {},
     },
-  ],
+  ] as Target[],
 });
 
 const logger = pino({level: 'info'}, transport);
 
-export default logger
+export default logger;
