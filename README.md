@@ -38,8 +38,8 @@ Login Fusion: fusion has url http://localhost:9011/api/login to get a token, in 
 
 ```
 {
-    "loginId": "sortaminty@gmail.com",
-    "password": "M!nt1y1e",
+    "loginId": "user@email.com",
+    "password": "passwordHere",
     "applicationId":"1f1854e8-6114-4efd-945e-2516e3d94767"
 }
 ```
@@ -50,8 +50,8 @@ Login API: once you know fusion login is working, you can move on to node. url i
 
 ```
 {
-    "loginId": "sortaminty@gmail.com",
-    "password": "M!nt1y1e"
+    "loginId": "user@email.com",
+    "password": "passwordHere"
 }
 ```
 
